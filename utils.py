@@ -6,20 +6,6 @@ real_label = 1.
 fake_label = 0.
 
 def generator_loss(netD, fake_audios):
-    """Loss computed to train the GAN generator.
-
-    Args:
-      netD: The discriminator whose forward function takes inputs of shape (batch_size, nc, 28, 28)
-         and produces outputs of shape (batch_size, 1).
-      fake_audios of shape (batch_size, nc, 28, 28): Fake images produces by the generator.
-
-    Returns:
-      loss: The mean of the binary cross-entropy losses computed for all the samples in the batch.
-
-    Notes:
-    - Make sure that you process on the device given by `fake_audios.device`.
-    - Use values of global variables `real_label`, `fake_label` to produce the right targets.
-    """
     out, hidden  = netD(fake_audios)
     out = out.to(fake_audios.device)
     tgt = torch.full([fake_audios.shape[0]], fake_label).to(fake_audios.device)
@@ -28,23 +14,6 @@ def generator_loss(netD, fake_audios):
     return loss
 
 def discriminator_loss(netD, real_audios, fake_audios):
-    """Loss computed to train the GAN discriminator.
-
-    Args:
-      netD: The discriminator.
-      real_audios of shape (batch_size, nc, 28, 28): Real images.
-      fake_audios of shape (batch_size, nc, 28, 28): Fake images produces by the generator.
-
-    Returns:
-      d_loss_real: The mean of the binary cross-entropy losses computed on the real_audios.
-      D_real: Mean output of the discriminator for real_audios. This is useful for tracking convergence.
-      d_loss_fake: The mean of the binary cross-entropy losses computed on the fake_audios.
-      D_fake: Mean output of the discriminator for fake_audios. This is useful for tracking convergence.
-
-    Notes:
-    - Make sure that you process on the device given by `fake_audios.device`.
-    - Use values of global variables `real_label`, `fake_label` to produce the right targets.
-    """
     real_audios = real_audios.reshape(real_audios.shape[0], 1012, 80)
     tgt_real = torch.full([real_audios.shape[0]], real_label)
     tgt_fake = torch.full([fake_audios.shape[0]], fake_label)
