@@ -1,27 +1,32 @@
 import torch
+from torch import nn
+import torchaudio
 from tqdm.auto import tqdm
+import numpy as np
+import matplotlib.pyplot as plt
 
 from cnnModels import CnnDiscriminator, CnnGenerator
 from rnnModels import RnnDiscriminator, RnnGenerator
-from utils import generator_loss, discriminator_loss, AudioDataset
-
-def load_data(fn):
-  print("Loading data")
-  #data = torch.load(f'/content/drive/MyDrive/ColabNotebooks/iTalk/data/{fn}') for google colab
-  data = torch.load(f'/data/{fn}') # For local computing
-  print("Data loaded")
-  return data
+from utils import generator_loss, discriminator_loss, AudioDataset, load_data, generate_img
 
 def train(data):
   epochs = 10
   lr = 0.01
   batch_size = 64
-  mel_length = 1012
+  
+  train_audio_transforms = nn.Sequential(
+    # 80 is the full thing
+    torchaudio.transforms.FrequencyMasking(freq_mask_param=15),
+    # 256 is the hop size, so 86 is one second
+    torchaudio.transforms.TimeMasking(time_mask_param=35)
+  )
   ds = AudioDataset(data.squeeze().to(device))
   dataloader = torch.utils.data.DataLoader(ds, batch_size=batch_size, shuffle=True)
 
-  netG = RnnGenerator()
-  netD = RnnDiscriminator()
+  mel_length = ds[0].shape[0]
+
+  netG = RnnGenerator(mel_len=mel_length)
+  netD = RnnDiscriminator(mel_len=mel_length)
 
   netD = netD.to(device)
   netG = netG.to(device)
@@ -57,6 +62,11 @@ def train(data):
           
           if idx % 100 == 0:
               print(f"D_real: {D_real}, D_fake: {D_fake}, Generator loss: {gen_loss/(idx+1)}, Disc loss: {dis_loss/(idx+1)}")
+      
+      img = generate_img(netG)
+      plt.imshow(np.log10(img[0]))
+
+
   torch.save(netG.state_dict(), '1_dcgan_g.pth')
   torch.save(netD.state_dict(), '1_dcgan_d.pth')
 
